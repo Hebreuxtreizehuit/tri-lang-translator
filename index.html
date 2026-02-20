@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0f14" />
+  <title>Tri-Lang Translator</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-dot" aria-hidden="true"></div>
+      <div class="brand-text">
+        <div class="title">Tri-Lang Translator</div>
+        <div class="subtitle">English • Français • Kiswahili (online only)</div>
+      </div>
+    </div>
+
+    <div class="right">
+  <span id="netStatus" class="pill">Checking…</span>
+  <button id="settingsBtn" class="ghost" type="button">Settings</button>
+  <button id="installBtn" class="ghost hidden" type="button">Install</button>
+</div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Translate a single word</h2>
+
+      <div class="row">
+        <div class="field">
+          <label for="sourceLang">From</label>
+          <select id="sourceLang">
+            <option value="en" selected>English</option>
+            <option value="fr">French</option>
+            <option value="sw">Kiswahili</option>
+          </select>
+        </div>
+
+        <div class="swapWrap">
+          <button id="swapBtn" class="iconBtn" type="button" title="Swap languages" aria-label="Swap languages">
+            ⇄
+          </button>
+        </div>
+
+        <div class="field">
+          <label for="targetLang">To</label>
+          <select id="targetLang">
+            <option value="fr" selected>French</option>
+            <option value="en">English</option>
+            <option value="sw">Kiswahili</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="wordInput">Word (one only)</label>
+        <input id="wordInput" autocomplete="off" spellcheck="false" inputmode="text" placeholder="e.g., justice / bonjour / rafiki" />
+        <div class="hint">Tip: only the first token is used (spaces are trimmed).</div>
+      </div>
+
+      <div class="row actions">
+        <button id="translateBtn" class="primary" type="button">Translate</button>
+        <button id="clearBtn" class="secondary" type="button">Clear</button>
+      </div>
+
+      <div id="errorBox" class="error hidden" role="alert"></div>
+
+      <div class="result">
+        <div class="resultLabel">Translation</div>
+        <div id="translationOut" class="resultText">—</div>
+
+        <div class="miniRow">
+          <button id="copyBtn" class="ghost" type="button" disabled>Copy</button>
+          <button id="detailsBtn" class="ghost" type="button" disabled>Get linguistic details</button>
+        </div>
+
+        <div class="meta">
+          <span id="sourceNote">Source: —</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="detailsCard" class="card hidden">
+      <div class="detailsHeader">
+        <h2>Linguistic details</h2>
+        <div class="detailsSub" id="detailsTitle">—</div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Linguistic information tabs">
+        <button class="tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+        <button class="tab" data-tab="definitions" role="tab" aria-selected="false">Definition</button>
+        <button class="tab" data-tab="synonyms" role="tab" aria-selected="false">Synonyms</button>
+        <button class="tab" data-tab="antonyms" role="tab" aria-selected="false">Antonyms</button>
+        <button class="tab" data-tab="examples" role="tab" aria-selected="false">Quotations / Examples</button>
+        <button class="tab" data-tab="family" role="tab" aria-selected="false">Word family</button>
+        <button class="tab" data-tab="semantic" role="tab" aria-selected="false">Semantic field</button>
+        <button class="tab" data-tab="rhymes" role="tab" aria-selected="false">Rhymes</button>
+        <button class="tab" data-tab="history" role="tab" aria-selected="false">History (Etymology)</button>
+      </div>
+
+      <div class="panel">
+        <div id="loadingDetails" class="loading hidden">Loading…</div>
+
+        <div class="tabPanel" data-panel="overview"></div>
+        <div class="tabPanel hidden" data-panel="definitions"></div>
+        <div class="tabPanel hidden" data-panel="synonyms"></div>
+        <div class="tabPanel hidden" data-panel="antonyms"></div>
+        <div class="tabPanel hidden" data-panel="examples"></div>
+        <div class="tabPanel hidden" data-panel="family"></div>
+        <div class="tabPanel hidden" data-panel="semantic"></div>
+        <div class="tabPanel hidden" data-panel="rhymes"></div>
+        <div class="tabPanel hidden" data-panel="history"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footNote">
+        Online-only app: translation + linguistic info are fetched live.
+      </div>
+    </footer>
+    <section id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="modalCard">
+    <div class="modalHeader">
+      <h2>Settings</h2>
+      <button id="closeSettingsBtn" class="ghost" type="button">Close</button>
+    </div>
+
+    <div class="field">
+      <label for="googleKey">Google Translate API key (recommended)</label>
+      <input id="googleKey" type="password" placeholder="Paste your Google API key here" />
+      <div class="hint">Stored locally on this device (localStorage). For personal use only.</div>
+    </div>
+
+    <div class="field">
+      <label for="libreEndpoint">LibreTranslate endpoint (fallback)</label>
+      <input id="libreEndpoint" type="text" value="https://libretranslate.de" />
+      <div class="hint">Example: https://libretranslate.de (must allow CORS).</div>
+    </div>
+
+    <div class="row actions">
+      <button id="saveSettingsBtn" class="primary" type="button">Save</button>
+      <button id="clearKeyBtn" class="secondary" type="button">Clear Google Key</button>
+    </div>
+
+    <div class="hint">
+      Hybrid mode: Google → (verify) → Libre fallback. If output language is wrong, the app retries automatically.
+    </div>
+  </div>
+</section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
