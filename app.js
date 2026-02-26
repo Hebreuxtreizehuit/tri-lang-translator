@@ -4,11 +4,11 @@
 const $ = (id) => document.getElementById(id);
 
 // LocalStorage keys
-const LS_GOOGLE = "tri_google_key";
-const LS_LIBRE = "tri_libre_endpoint";
+const LS_WORKER = "tri_worker_url";
+const LS_LIBRE = "tri_libre_endpoint"; // optional (not required now)
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ---------- PWA: service worker ----------
+  // ---------------- PWA: service worker ----------------
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", async () => {
       try {
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- PWA: Install button ----------
+  // ---------------- PWA: Install button ----------------
   let deferredPrompt = null;
   const installBtn = $("installBtn");
 
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Online status ----------
+  // ---------------- Online status ----------------
   const netStatus = $("netStatus");
   const updateOnlineStatus = () => {
     if (!netStatus) return;
@@ -51,11 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("offline", updateOnlineStatus);
   updateOnlineStatus();
 
-  // ---------- Elements ----------
+  // ---------------- Elements ----------------
   const fromLang = $("fromLang");
   const toLang = $("toLang");
   const swapBtn = $("swapBtn");
   const wordInput = $("wordInput");
+
   const translateBtn = $("translateBtn");
   const clearBtn = $("clearBtn");
   const translationOut = $("translationOut");
@@ -68,10 +69,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsModal = $("settingsModal");
   const closeSettingsBtn = $("closeSettingsBtn");
   const saveSettingsBtn = $("saveSettingsBtn");
-  const googleKey = $("googleKey");
-  const libreEndpoint = $("libreEndpoint");
 
-  // ---------- UI helpers ----------
+  // In your current UI this is labeled "LibreTranslate endpoint" —
+  // we will repurpose it to store your WORKER URL if you want,
+  // OR you can add a new input later. For now:
+  const libreEndpoint = $("libreEndpoint"); // we’ll store Worker URL here to avoid editing HTML
+
+  // (Optional) if googleKey input still exists in HTML, we disable/ignore it safely
+  const googleKey = $("googleKey");
+  if (googleKey) {
+    googleKey.value = "";
+    googleKey.placeholder = "Not used (API key is stored in Cloudflare Worker)";
+    googleKey.disabled = true;
+  }
+
+  // ---------------- UI helpers ----------------
   function showError(msg) {
     if (!errorOut) return;
     errorOut.textContent = msg;
@@ -85,10 +97,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function setResult(text, source) {
     if (translationOut) translationOut.textContent = text || "—";
     if (sourceOut) sourceOut.textContent = `Source: ${source || "—"}`;
-    if (copyBtn) copyBtn.disabled = !text;
+    if (copyBtn) copyBtn.disabled = !text || text === "—";
   }
 
-  // ---------- Swap/Clear ----------
+  // ---------------- Swap/Clear ----------------
   if (swapBtn && fromLang && toLang) {
     swapBtn.addEventListener("click", () => {
       const a = fromLang.value;
@@ -106,16 +118,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Settings storage ----------
+  // ---------------- Settings storage ----------------
+  const DEFAULT_WORKER_URL = "https://super-shadow-407b.davidbulambo.workers.dev";
+
   function loadSettings() {
-    if (googleKey) googleKey.value = localStorage.getItem(LS_GOOGLE) || "";
-    if (libreEndpoint) libreEndpoint.value = localStorage.getItem(LS_LIBRE) || "https://libretranslate.de";
+    const worker = localStorage.getItem(LS_WORKER) || DEFAULT_WORKER_URL;
+    const libre = localStorage.getItem(LS_LIBRE) || "https://libretranslate.de";
+
+    // We reuse libreEndpoint input for Worker URL (so you don’t need to change HTML)
+    if (libreEndpoint) libreEndpoint.value = worker;
+
+    // Keep storing libre in case you want it later
+    localStorage.setItem(LS_LIBRE, libre);
   }
+
   function saveSettings() {
-    const g = (googleKey?.value || "").trim();
-    const le = (libreEndpoint?.value || "").trim() || "https://libretranslate.de";
-    localStorage.setItem(LS_GOOGLE, g);
-    localStorage.setItem(LS_LIBRE, le);
+    const worker = (libreEndpoint?.value || "").trim() || DEFAULT_WORKER_URL;
+    localStorage.setItem(LS_WORKER, worker);
   }
 
   function openModal() {
@@ -123,23 +142,21 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSettings();
     settingsModal.classList.remove("hidden");
     document.body.classList.add("no-scroll");
-    // Focus first input so user can type immediately
-    setTimeout(() => googleKey?.focus(), 0);
+    setTimeout(() => libreEndpoint?.focus(), 0);
   }
 
   function closeModal() {
     if (!settingsModal) return;
     settingsModal.classList.add("hidden");
     document.body.classList.remove("no-scroll");
-    // Return focus to word input
     setTimeout(() => wordInput?.focus(), 0);
   }
 
   if (settingsBtn) settingsBtn.addEventListener("click", openModal);
-  if (closeSettingsBtn) closeSettingsBtn.addEventListener("click", closeModal);
+  if (closeSettingsBtn) settingsBtn && closeSettingsBtn.addEventListener("click", closeModal);
 
-  // Click outside modal card closes it
   if (settingsModal) {
+    // click outside closes
     settingsModal.addEventListener("click", (e) => {
       if (e.target === settingsModal) closeModal();
     });
@@ -159,31 +176,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Translation functions ----------
-  async function googleTranslate(word, from, to, apiKey) {
-    const url = `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`;
-    const body = { q: word, source: from, target: to, format: "text" };
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error?.message || `Google Translate failed (${res.status})`);
-    }
-
-    const translated = data?.data?.translations?.[0]?.translatedText;
-    if (!translated) throw new Error("Google Translate returned no text.");
-    return translated;
-  }
-
-  async function libreTranslate(word, from, to, endpoint) {
-    const clean = (endpoint || "").replace(/\/+$/, "");
-    const url = `${clean}/translate`;
+  // ---------------- Translation via Worker ----------------
+  async function translateViaWorker(word, from, to) {
+    const base = (localStorage.getItem(LS_WORKER) || DEFAULT_WORKER_URL).trim().replace(/\/+$/, "");
+    const url = `${base}/translate`;
 
     const res = await fetch(url, {
       method: "POST",
@@ -192,14 +188,16 @@ document.addEventListener("DOMContentLoaded", () => {
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error(`LibreTranslate failed (${res.status})`);
     const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || `Worker failed (${res.status})`);
+    }
     const translated = data?.translatedText;
-    if (!translated) throw new Error("LibreTranslate returned no text.");
-    return translated;
+    if (!translated) throw new Error("Worker returned no text.");
+    return { translated, source: data?.source || "Worker" };
   }
 
-  // ---------- Translate ----------
+  // ---------------- Translate ----------------
   if (translateBtn && wordInput && fromLang && toLang) {
     translateBtn.addEventListener("click", async () => {
       clearError();
@@ -213,19 +211,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       setResult("…", "Working");
 
-      const apiKey = (localStorage.getItem(LS_GOOGLE) || "").trim();
-      const endpoint = (localStorage.getItem(LS_LIBRE) || "https://libretranslate.de").trim();
-
       try {
-        let translated, source;
-        if (apiKey) {
-          translated = await googleTranslate(word, from, to, apiKey);
-          source = "Google Translate API";
-        } else {
-          translated = await libreTranslate(word, from, to, endpoint);
-          source = `LibreTranslate (${endpoint})`;
-        }
-        setResult(translated, source);
+        const r = await translateViaWorker(word, from, to);
+        setResult(r.translated, r.source);
       } catch (e) {
         setResult("", "");
         showError(e?.message || "Translation failed.");
@@ -240,7 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Copy ----------
+  // ---------------- Copy ----------------
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
       const t = translationOut?.textContent || "";
@@ -252,4 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // On load, set default source display
+  setResult("", "");
 });
