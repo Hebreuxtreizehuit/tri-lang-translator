@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Translation functions ----------
   async function translateWord(word) {
-    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=YOUR_GOOGLE_API_KEY`, {
+    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=AIzaSyAAFVh4KpaTDi07QqejbtnV945lYNnUIF8`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function translatePhrase(phrase) {
-    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=YOUR_GOOGLE_API_KEY`, {
+    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=AIzaSyAAFVh4KpaTDi07QqejbtnV945lYNnUIF8`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
