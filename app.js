@@ -321,12 +321,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Audio function for reading out the translation
-  playAudioBtn.addEventListener('click', () => {
-    const text = translationOut.textContent;
-    if (text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
-    }
-  });
-});
+ 
