@@ -244,3 +244,89 @@ document.addEventListener("DOMContentLoaded", () => {
   // On load, set default source display
   setResult("", "");
 });
+// Existing code if any, for initializations or other functions
+
+document.addEventListener("DOMContentLoaded", () => {
+  const wordModeBtn = document.getElementById('wordMode');
+  const phraseModeBtn = document.getElementById('phraseMode');
+  const wordModeContent = document.getElementById('wordModeContent');
+  const phraseModeContent = document.getElementById('phraseModeContent');
+  const translateBtn = document.getElementById('translateBtn');
+  const translatePhraseBtn = document.getElementById('translatePhraseBtn');
+  const translationOut = document.getElementById('translationOut');
+  const playAudioBtn = document.getElementById('playAudio');
+  
+  let selectedMode = 'word';  // Default is word mode
+
+  // Toggle between word mode and phrase mode
+  wordModeBtn.addEventListener('click', () => {
+    selectedMode = 'word';
+    wordModeBtn.classList.add('active');
+    phraseModeBtn.classList.remove('active');
+    wordModeContent.style.display = 'block';
+    phraseModeContent.style.display = 'none';
+  });
+  
+  phraseModeBtn.addEventListener('click', () => {
+    selectedMode = 'phrase';
+    phraseModeBtn.classList.add('active');
+    wordModeBtn.classList.remove('active');
+    wordModeContent.style.display = 'none';
+    phraseModeContent.style.display = 'block';
+  });
+
+  // Translate function for word mode
+  async function translateWord(word) {
+    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=YOUR_GOOGLE_API_KEY`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: word,
+        target: 'en'
+      })
+    });
+    const data = await response.json();
+    return data.data.translations[0].translatedText;
+  }
+
+  // Translate function for phrase mode
+  async function translatePhrase(phrase) {
+    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=YOUR_GOOGLE_API_KEY`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: phrase,
+        target: 'en'
+      })
+    });
+    const data = await response.json();
+    return data.data.translations[0].translatedText;
+  }
+
+  // Handle translation button click
+  translateBtn.addEventListener('click', async () => {
+    const word = document.getElementById('wordInput').value;
+    if (word.trim()) {
+      const translation = await translateWord(word);
+      translationOut.textContent = translation;
+    }
+  });
+
+  // Handle phrase translation button click
+  translatePhraseBtn.addEventListener('click', async () => {
+    const phrase = document.getElementById('phraseInput').value;
+    if (phrase.trim()) {
+      const translation = await translatePhrase(phrase);
+      translationOut.textContent = translation;
+    }
+  });
+
+  // Audio function for reading out the translation
+  playAudioBtn.addEventListener('click', () => {
+    const text = translationOut.textContent;
+    if (text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
+  });
+});

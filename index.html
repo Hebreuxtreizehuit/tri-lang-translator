@@ -10,6 +10,26 @@
   <link rel="icon" href="./icons/icon-192.png" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .mode-toggle button {
+  margin: 5px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.mode-toggle .active {
+  background-color: #0078d4;
+  color: white;
+}
+
+textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -27,6 +47,28 @@
       <button id="installBtn" class="ghost hidden" type="button">Install</button>
     </div>
   </header>
+  <div class="translation-container">
+  <div class="mode-toggle">
+    <button id="wordMode" class="active">Word Mode</button>
+    <button id="phraseMode">Phrase Mode</button>
+  </div>
+  
+  <div id="wordModeContent">
+    <input type="text" id="wordInput" placeholder="Enter a word" />
+    <button id="translateBtn">Translate</button>
+  </div>
+  
+  <div id="phraseModeContent" style="display: none;">
+    <textarea id="phraseInput" placeholder="Enter a phrase" rows="4"></textarea>
+    <button id="translatePhraseBtn">Translate</button>
+  </div>
+  
+  <div id="result">
+    <h3>Translation:</h3>
+    <p id="translationOut"></p>
+    <button id="playAudio">Play Audio</button>
+  </div>
+</div>
 
   <main class="container">
     <section class="card">
